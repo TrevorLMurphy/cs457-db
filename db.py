@@ -19,16 +19,34 @@ def parse_file(arg):
             for i in range(0, len(keys)):
                 d[keys[i]] = vals[i]
             array.append(d)
-            id_count+=1
+            id_count += 1
     return array
 
-def process_data(data):
+def get_condition_and_field(string):
     """
-    Create array of dictionaries from data
+    Retrieve the condition and the fields
     """
-    print data
+    condition = ""
+    field = ""
+    i = 1
+    while string[i] != ",":
+        condition += string[i]
+        i += 1
+    while i < len(string):
+        field += string[i]
+        i += 1
+    return (condition, field[2:].replace(")", ""))
 
-def process_query(query):
+def get_response(cond, fields, data):
+    """
+    Query response
+    """
+    for doc in data:
+        if 'Age' in doc and doc['Age'] == 20:
+            print doc
+    print cond, fields
+
+def process_query(query, data):
     """
     Make sense of the query
     """
@@ -40,10 +58,13 @@ def process_query(query):
         else:
             operation = query[9:]
             if operation.startswith("find", 0, 4):
-                # Do the find operation
+                condition = get_condition_and_field(query[13:])[0]
+                fields = get_condition_and_field(query[13:])[1]
+                get_response(condition, fields, data)
                 print "You're trying to do find!"
             elif operation.startswith("avg", 0, 3):
                 # Do the avg operation
+                print query[12:]
                 print "You're trying to do average!"
             else:
                 print "That operation is not supported by this program!"
@@ -51,7 +72,7 @@ def process_query(query):
 
 if __name__ == '__main__':
     DATA = parse_file(sys.argv[1])
-    process_data(DATA)
-    # query = raw_input("query: ")
-    # processQuery(query)
-    # print("Exiting...")
+    # process_data(DATA)
+    QUERY = raw_input("query: ")
+    process_query(QUERY, DATA)
+    print "Exiting..."
