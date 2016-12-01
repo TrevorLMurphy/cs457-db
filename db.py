@@ -14,7 +14,7 @@ def parse_file(arg):
         id_count = 0
         for line in f:
             line_array = line.strip('\r\n ').replace(":", "").split(" ")
-            d = {'id': id_count}
+            d = {'ID': id_count}
             keys = line_array[0::2]
             vals = line_array[1::2]
             for i in range(0, len(keys)):
@@ -40,9 +40,14 @@ def get_condition_and_field(string):
     while i < len(string):
         field += string[i]
         i += 1
-    return (condition, field[1:].replace(")", ""))
+
+    return (condition, field[1:-1])
 
 def process_cond(cond):
+    """
+    A list of conditional statements that have elements that
+    are lists that contain the conditional tuples...ugh
+    """
     key = ""
     val = ""
     full_cond = []
@@ -89,6 +94,7 @@ def process_fields(fields):
     return field_list
 
 def get_operator(op):
+    # This is awesome
     return {
         '=' : operator.eq,
         '!=' : operator.ne,
@@ -99,6 +105,9 @@ def get_operator(op):
         }[op]
 
 def perform_cond(cond, doc):
+    # Conditional tuple is in the form:
+    # (field, conditional_operator, value)
+    # This function isn't very readable but it's cool
     return cond[0] in doc and get_operator(cond[1])(doc[cond[0]], cond[2])
 
 def eval_cond(cond, data):
@@ -122,12 +131,18 @@ def eval_cond(cond, data):
     return result
 
 def outer_join(result1, result2):
+    """
+    Outer join for OR statements
+    """
     for doc in result2:
         if doc not in result1:
             result1.append(doc)
     return result1
 
 def inner_join(result1, result2):
+    """
+    Inner join for AND statements
+    """
     return [doc for doc in result1 if doc in result2]
 
 def get_response(cond, fields, data):
@@ -136,6 +151,7 @@ def get_response(cond, fields, data):
     """
     result = []
     i = 0
+
     while i < len(cond):
         if isinstance(cond[i], list):
             result = eval_cond(cond[i], data)
@@ -148,6 +164,11 @@ def get_response(cond, fields, data):
                 result = inner_join([result.pop()], eval_cond(cond[i + 1], data))
                 i += 2
 
+    if not cond:
+        # No conditional? Then get ALL the documents
+        result = data
+
+    print
     if not fields:
         # Output all the fields
         for doc in result:
@@ -160,6 +181,7 @@ def get_response(cond, fields, data):
                 if field in doc:
                     print(field + ": " + str(doc[field])),
             print
+    print
 
 def process_query(query, data):
     """
@@ -177,9 +199,7 @@ def process_query(query, data):
                 fields = get_condition_and_field(query[13:])[1]
                 cond_list = process_cond(conditions)
                 field_list = process_fields(fields)
-                print
                 get_response(cond_list, field_list, data)
-                print
             elif operation.startswith("avg", 0, 3):
                 # Do the avg operation
                 print query[12:]
