@@ -45,31 +45,48 @@ def get_condition_and_field(string):
 def process_cond(cond):
     key = ""
     val = ""
+    full_cond = []
     key_vals = []
     i = 1
     while i < len(cond):
-        if key == 'and' or key == 'or':
-            key_vals.append(key)
-            key = ""
+        if cond[i] == ' ' or cond[i] == '(':
             i += 1
+        elif key == 'and' or key == 'or':
+            if key_vals:
+                key_vals.append(key)
+            else:
+                full_cond.append(key)
+            key = ""
         elif cond[i] == '=' or cond[i] == '<' or cond[i] == '>' or cond[i] == '!':
             oper = cond[i]
-            if cond[i+1] == '=':
+            if cond[i + 1] == '=':
                 oper += cond[i + 1]
                 i += 2
             else:
                 i += 1
-            while cond[i] != " " and cond[i] != ')':
+            while cond[i] != ' ' and cond[i] != ')':
                 val += cond[i]
                 i += 1
             key_vals.append((key, oper, val))
             key = ""
             val = ""
+            if cond[i] == ')':
+                full_cond.append(key_vals)
+                key_vals = []
             i += 1
         else:
             key += cond[i]
             i += 1
-    return key_vals
+
+    return full_cond
+
+def process_fields(fields):
+    field_list = []
+    if fields == '[]':
+        return field_list
+    else:
+        field_list = [s.strip() for s in fields[1:-1].split(',')]
+    return field_list
 
 def get_operator(op):
     return {
@@ -84,15 +101,11 @@ def get_operator(op):
 def perform_cond(cond, doc):
     return cond[0] in doc and get_operator(cond[1])(doc[cond[0]], cond[2])
 
-def get_response(cond, fields, data):
-    """
-    Query response
-    """
-    conditions = process_cond(cond)
+def eval_cond(cond, data):
     result = []
     is_and = False
     is_or = False
-    for elem in conditions:
+    for elem in cond:
         if elem == 'and':
             is_and = True
             is_or = False
@@ -106,9 +119,47 @@ def get_response(cond, fields, data):
                 for doc in data:
                     if perform_cond(elem, doc) and doc not in result:
                         result.append(doc)
+    return result
 
-    for doc in result:
-        print doc
+def outer_join(result1, result2):
+    for doc in result2:
+        if doc not in result1:
+            result1.append(doc)
+    return result1
+
+def inner_join(result1, result2):
+    return [doc for doc in result1 if doc in result2]
+
+def get_response(cond, fields, data):
+    """
+    Query response
+    """
+    result = []
+    i = 0
+    while i < len(cond):
+        if isinstance(cond[i], list):
+            result = eval_cond(cond[i], data)
+            i += 1
+        else:
+            if cond[i] == 'or':
+                result = outer_join([result.pop()], eval_cond(cond[i + 1], data))
+                i += 2
+            else:
+                result = inner_join([result.pop()], eval_cond(cond[i + 1], data))
+                i += 2
+
+    if not fields:
+        # Output all the fields
+        for doc in result:
+            for k,v in doc.items():
+                print(k + ": " + str(v)),
+            print
+    else:
+        for doc in result:
+            for field in fields:
+                if field in doc:
+                    print(field + ": " + str(doc[field])),
+            print
 
 def process_query(query, data):
     """
@@ -122,10 +173,13 @@ def process_query(query, data):
         else:
             operation = query[9:]
             if operation.startswith("find", 0, 4):
-                condition = get_condition_and_field(query[13:])[0]
+                conditions = get_condition_and_field(query[13:])[0]
                 fields = get_condition_and_field(query[13:])[1]
-                get_response(condition, fields, data)
-                print "You're trying to do find!"
+                cond_list = process_cond(conditions)
+                field_list = process_fields(fields)
+                print
+                get_response(cond_list, field_list, data)
+                print
             elif operation.startswith("avg", 0, 3):
                 # Do the avg operation
                 print query[12:]
@@ -136,7 +190,6 @@ def process_query(query, data):
 
 if __name__ == '__main__':
     DATA = parse_file(sys.argv[1])
-    # process_data(DATA)
     QUERY = raw_input("query: ")
     process_query(QUERY, DATA)
     print "Exiting..."
