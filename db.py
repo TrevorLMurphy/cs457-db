@@ -14,7 +14,7 @@ def parse_file(arg):
         id_count = 0
         for line in f:
             line_array = line.strip('\r\n ').replace(":", "").split(" ")
-            d = {'ID': id_count}
+            d = {'ID': str(id_count)}
             keys = line_array[0::2]
             vals = line_array[1::2]
             for i in range(0, len(keys)):
@@ -62,9 +62,9 @@ def process_cond(cond):
             else:
                 full_cond.append(key)
             key = ""
-        elif cond[i] == '=' or cond[i] == '<' or cond[i] == '>' or cond[i] == '!':
+        elif cond[i] == '=' or cond[i] == '<' or cond[i] == '>':
             oper = cond[i]
-            if cond[i + 1] == '=':
+            if cond[i + 1] == '>':
                 oper += cond[i + 1]
                 i += 2
             else:
@@ -97,11 +97,9 @@ def get_operator(op):
     # This is awesome
     return {
         '=' : operator.eq,
-        '!=' : operator.ne,
+        '<>' : operator.ne,
         '<' : operator.lt,
-        '<=' : operator.le,
-        '>' : operator.gt,
-        '>=' : operator.ge
+        '>' : operator.gt
         }[op]
 
 def perform_cond(cond, doc):
