@@ -44,6 +44,9 @@ def process_find(string):
     return (condition, field[1:-1])
 
 def process_avg(field):
+    """
+    Just returns the average argument
+    """
     return field[1:-1]
 
 def process_cond(cond):
@@ -89,8 +92,11 @@ def process_cond(cond):
     return full_cond
 
 def process_fields(fields):
+    """
+    Get a list of fields
+    """
     field_list = []
-    if fields == '[]':
+    if fields == '[]': # No fields
         return field_list
     else:
         field_list = [s.strip() for s in fields[1:-1].split(',')]
@@ -106,22 +112,24 @@ def get_operator(op):
         }[op]
 
 def perform_cond(cond, doc):
-    # Conditional tuple is in the form:
-    # (field, conditional_operator, value)
-    # This function isn't very readable but it's cool
+    """
+    Conditional tuple is in the form:
+    (field, conditional_operator, value)
+    This function isn't very readable but it's cool
+    """
     return cond[0] in doc and get_operator(cond[1])(doc[cond[0]], cond[2])
 
 def eval_cond(cond, data):
+    """
+    Evaluate the inner conditionals
+    """
     result = []
     is_and = False
-    is_or = False
     for elem in cond:
         if elem == 'and':
             is_and = True
-            is_or = False
         elif elem == 'or':
             is_and = False
-            is_or = True
         else:
             if is_and:
                 result = [doc for doc in result if perform_cond(elem, doc)]
@@ -163,7 +171,6 @@ def find_result(cond, fields, data):
                     result = outer_join(result, eval_cond(cond[i + 1], data))
                 else:
                     result = outer_join([], eval_cond(cond[i + 1], data))
-
                 i += 2
             else:
                 if result:
@@ -180,7 +187,7 @@ def find_result(cond, fields, data):
     if not fields:
         # Output all the fields
         for doc in result:
-            for k,v in doc.items():
+            for k, v in doc.items():
                 print(k + ": " + str(v)),
             print
     else:
@@ -194,6 +201,9 @@ def find_result(cond, fields, data):
     print
 
 def avg_result(field, data):
+    """
+    Get the result from average
+    """
     count = 0
     my_sum = 0
     for doc in data:
