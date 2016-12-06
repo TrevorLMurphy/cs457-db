@@ -23,9 +23,9 @@ def parse_file(arg):
             id_count += 1
     return array
 
-def get_condition_and_field(string):
+def process_find(string):
     """
-    Retrieve the condition and the fields
+    Retrieve the condition and the fields of a find expression
     """
     condition = ""
     field = ""
@@ -42,6 +42,9 @@ def get_condition_and_field(string):
         i += 1
 
     return (condition, field[1:-1])
+
+def process_avg(field):
+    return field[1:-1]
 
 def process_cond(cond):
     """
@@ -143,7 +146,7 @@ def inner_join(result1, result2):
     """
     return [doc for doc in result1 if doc in result2]
 
-def get_response(cond, fields, data):
+def find_result(cond, fields, data):
     """
     Query response
     """
@@ -156,10 +159,17 @@ def get_response(cond, fields, data):
             i += 1
         else:
             if cond[i] == 'or':
-                result = outer_join([result.pop()], eval_cond(cond[i + 1], data))
+                if result:
+                    result = outer_join(result, eval_cond(cond[i + 1], data))
+                else:
+                    result = outer_join([], eval_cond(cond[i + 1], data))
+
                 i += 2
             else:
-                result = inner_join([result.pop()], eval_cond(cond[i + 1], data))
+                if result:
+                    result = inner_join(result, eval_cond(cond[i + 1], data))
+                else:
+                    result = inner_join([], eval_cond(cond[i + 1], data))
                 i += 2
 
     if not cond:
@@ -175,10 +185,24 @@ def get_response(cond, fields, data):
             print
     else:
         for doc in result:
+            output = ""
             for field in fields:
                 if field in doc:
-                    print(field + ": " + str(doc[field])),
-            print
+                    output += field + ": " + str(doc[field])
+            if output: # Sometimes nothing is returned
+                print output
+    print
+
+def avg_result(field, data):
+    count = 0
+    my_sum = 0
+    for doc in data:
+        if field in doc:
+            count += 1
+            my_sum += int(doc[field])
+    print
+    if count != 0:
+        print my_sum / float(count)
     print
 
 def process_query(query, data):
@@ -193,17 +217,17 @@ def process_query(query, data):
         else:
             operation = query[9:]
             if operation.startswith("find", 0, 4):
-                conditions = get_condition_and_field(query[13:])[0]
-                fields = get_condition_and_field(query[13:])[1]
+                conditions = process_find(query[13:])[0]
+                fields = process_find(query[13:])[1]
                 cond_list = process_cond(conditions)
                 field_list = process_fields(fields)
-                get_response(cond_list, field_list, data)
+                find_result(cond_list, field_list, data)
             elif operation.startswith("avg", 0, 3):
                 # Do the avg operation
-                print query[12:]
-                print "You're trying to do average!"
+                field = process_avg(query[12:])
+                avg_result(field, data)
             else:
-                print "That operation is not supported by this program!"
+                print "\nThat operation is not supported by this program!\n"
         query = raw_input("query: ")
 
 if __name__ == '__main__':
