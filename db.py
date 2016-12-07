@@ -66,11 +66,11 @@ def process_cond(cond):
                 full_cond.append(key_vals[-1])
             key_vals = []
             i += 1
-        elif key == 'and' or key == 'or':
+        elif key.strip() == 'and' or key.strip() == 'or':
             if key_vals:
-                key_vals.append(key)
+                key_vals.append(key.strip())
             else:
-                full_cond.append(key)
+                full_cond.append(key.strip())
             key = ""
         elif cond[i] == '=' or cond[i] == '<' or cond[i] == '>':
             oper = cond[i]
@@ -82,7 +82,7 @@ def process_cond(cond):
             while cond[i] != ' ' and cond[i] != ')':
                 val += cond[i]
                 i += 1
-            key_vals.append((key, oper, val))
+            key_vals.append((key.strip(), oper, val))
             key = ""
             val = ""
             if cond[i] == ')':
@@ -219,7 +219,7 @@ def avg_result(field, data):
     for doc in data:
         if field in doc:
             count += 1
-            my_sum += int(doc[field])
+            my_sum += cast(doc[field])
     print
     if count != 0:
         print my_sum / float(count)
