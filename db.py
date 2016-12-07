@@ -206,7 +206,7 @@ def find_result(cond, fields, data):
             output = ""
             for field in fields:
                 if field in doc:
-                    output += field + ": " + str(doc[field])
+                    output += field + ": " + str(doc[field]) + " "
             if output: # Sometimes nothing is returned
                 print output
     print
