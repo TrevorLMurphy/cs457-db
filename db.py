@@ -60,7 +60,11 @@ def process_cond(cond):
     key_vals = []
     i = 1
     while i < len(cond):
-        if cond[i] == ' ' or cond[i] == '(':
+        if cond[i] == '(':
+            if key_vals[-1] == 'or' or key_vals[-1] == 'and':
+                full_cond.append(key_vals[0:-1])
+                full_cond.append(key_vals[-1])
+            key_vals = []
             i += 1
         elif key == 'and' or key == 'or':
             if key_vals:
@@ -149,9 +153,6 @@ def outer_join(result1, result2):
     """
     Outer join for OR statements
     """
-    print result1
-    print
-    print result2
     for doc in result2:
         if doc not in result1:
             result1.append(doc)
@@ -170,8 +171,6 @@ def find_result(cond, fields, data):
     result = []
     i = 0
 
-    print cond
-    
     while i < len(cond):
         if isinstance(cond[i], list):
             result = eval_cond(cond[i], data)
