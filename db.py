@@ -244,7 +244,6 @@ def process_query(query, data):
                 field_list = process_fields(fields)
                 find_result(cond_list, field_list, data)
             elif operation.startswith("avg", 0, 3):
-                # Do the avg operation
                 field = process_avg(query[12:])
                 avg_result(field, data)
             else:
