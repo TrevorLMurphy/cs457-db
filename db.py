@@ -111,13 +111,19 @@ def get_operator(op):
         '>' : operator.gt
         }[op]
 
+def cast(s):
+    try:
+        return int(s)
+    except ValueError:
+        return s
+
 def perform_cond(cond, doc):
     """
     Conditional tuple is in the form:
     (field, conditional_operator, value)
     This function isn't very readable but it's cool
     """
-    return cond[0] in doc and get_operator(cond[1])(doc[cond[0]], cond[2])
+    return cond[0] in doc and get_operator(cond[1])(cast(doc[cond[0]]), cast(cond[2]))
 
 def eval_cond(cond, data):
     """
@@ -143,6 +149,9 @@ def outer_join(result1, result2):
     """
     Outer join for OR statements
     """
+    print result1
+    print
+    print result2
     for doc in result2:
         if doc not in result1:
             result1.append(doc)
@@ -161,6 +170,8 @@ def find_result(cond, fields, data):
     result = []
     i = 0
 
+    print cond
+    
     while i < len(cond):
         if isinstance(cond[i], list):
             result = eval_cond(cond[i], data)
