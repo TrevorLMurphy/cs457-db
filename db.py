@@ -61,10 +61,11 @@ def process_cond(cond):
     i = 1
     while i < len(cond):
         if cond[i] == '(':
-            if key_vals[-1] == 'or' or key_vals[-1] == 'and':
-                full_cond.append(key_vals[0:-1])
-                full_cond.append(key_vals[-1])
-            key_vals = []
+            if key_vals:
+                if key_vals[-1] == 'or' or key_vals[-1] == 'and':
+                    full_cond.append(key_vals[0:-1])
+                    full_cond.append(key_vals[-1])
+                key_vals = []
             i += 1
         elif key.strip() == 'and' or key.strip() == 'or':
             if key_vals:
